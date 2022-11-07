@@ -1,4 +1,4 @@
-## Just Enough Tailwind CSS
+## Minimal Tailwind CSS integration reference
 
 This is a simple PostCSS plugin designed to cover all of the tricky integration points needed for a tool like Tailwind to work.
 
