@@ -91,7 +91,7 @@ describe('plugins', () => {
 // ---
 
 // Ignore below, just some helper functions
-let CSS = String.raw
+let css = String.raw
 
 function file(filePath) {
   return path.resolve(__dirname, filePath)
