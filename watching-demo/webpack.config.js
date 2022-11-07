@@ -21,7 +21,7 @@ module.exports = {
               postcssOptions: {
                 plugins: [
                   require('../generated-postcss-tailwind-plugin/index.js').default(
-                    path.resolve(__dirname, 'tailwind.config'),
+                    path.resolve(__dirname, 'tailwind.config.js'),
                   ),
                 ],
               },

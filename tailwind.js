@@ -5,7 +5,24 @@ import postcss from 'postcss'
 import postcssJs from 'postcss-js'
 
 // Tailwind Core
-export function tailwind({ root, result: _result, configPath }) {
+export function tailwind({ root, result, configPath }) {
+  // Add dependency message for watching related purposes so that we can rebuild the css if any of
+  // the
+  function watchFile(file) {
+    result.messages.push({
+      plugin: 'tailwindcss',
+      parent: result.opts.from,
+      type: 'dependency',
+      file,
+    })
+  }
+
+  // Ensure we have a fresh version
+  delete require.cache[configPath]
+
+  // Ensure we watch the config file as a dependency
+  watchFile(configPath)
+
   // Resolve the config
   let config = require(configPath)
 
@@ -16,6 +33,8 @@ export function tailwind({ root, result: _result, configPath }) {
   // NOTE: Not important about what's going on here, just that we need access to the content files
   // and we should be able to read the raw contents so that we can parse the file.
   for (let file of config.content) {
+    watchFile(file)
+
     let contents = fs.readFileSync(path.resolve(__dirname, file), 'utf8')
     // NOTE: Details here are not important, most important part is that we can "read" the files.
     for (let candidate of contents.split(/['"\s<>=/]/g)) {

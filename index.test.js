@@ -11,9 +11,9 @@ import tailwind from './index'
 // - [x] user defined JavaScript plugins that can generate css
 // - [x] user defined plugins in the css file that can generate css
 // - [x] read content files from the tailwind config
-// - [ ] regenerate the css when the config file changes
-// - [ ] regenerate the css when the css file changes
-// - [ ] regenerate the css when any template file changes
+// - [x] regenerate the css when the config file changes
+// - [x] regenerate the css when the css file changes
+// - [x] regenerate the css when any template file changes
 
 it('should generate css using values from your config file', () => {
   let input = readFile('./test-fixtures/colors/index.css')

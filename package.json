@@ -5,7 +5,7 @@
   "scripts": {
     "build": "esbuild --bundle index.js --platform=node --outdir=generated-postcss-tailwind-plugin --minify --sourcemap --external:postcss --external:postcss-js",
     "predemo": "npm run build",
-    "demo": "cd watching-demo; webpack",
+    "demo": "cd watching-demo; webpack --watch",
     "test": "jest"
   },
   "license": "MIT",
