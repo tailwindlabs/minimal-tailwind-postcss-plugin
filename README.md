@@ -27,7 +27,7 @@ What you will notice is that we want to trigger a rebuild when:
 - The css file changes
 - The tailwind.config.js file changes
 - Any of the files defined in tailwind.config.js under the `content` section changes.
-  - Note: in the real world the `content` section will contain "globs", which means that we want to register globs as a dependency as well.
+  - **Note**: in the real world the `content` section will contain "globs", which means that we want to register globs as a dependency as well.
 
 For demo purposes you should see the following results:
 - Save the `index.html` file, this should trigger a new webpack build
