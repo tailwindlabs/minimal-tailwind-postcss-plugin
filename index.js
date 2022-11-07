@@ -1,4 +1,4 @@
-import { tailwind } from './tailwind'
+import { tailwind } from './tailwind.js'
 
 // PostCSS Plugin
 export default function tailwindcss(configPath) {
