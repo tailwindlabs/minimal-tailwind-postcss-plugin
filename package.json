@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "main": "index.js",
   "scripts": {
-    "build": "esbuild --bundle index.js --platform=node --outdir=generated-postcss-tailwind-plugin --minify --sourcemap --external:postcss --external:postcss-js",
+    "build": "esbuild --bundle index.js --platform=node --outdir=dist --minify --sourcemap --external:postcss --external:postcss-js",
     "predemo": "npm run build",
     "demo": "cd watching-demo; webpack --watch",
     "test": "jest"

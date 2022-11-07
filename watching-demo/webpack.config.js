@@ -19,11 +19,7 @@ module.exports = {
             loader: 'postcss-loader',
             options: {
               postcssOptions: {
-                plugins: [
-                  require('../generated-postcss-tailwind-plugin/index.js').default(
-                    path.resolve(__dirname, 'tailwind.config.js'),
-                  ),
-                ],
+                plugins: [require('../dist/index.js').default(path.resolve(__dirname, 'tailwind.config.js'))],
               },
             },
           },
