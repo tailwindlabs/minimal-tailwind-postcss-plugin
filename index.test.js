@@ -1,10 +1,86 @@
+import fs from 'fs'
 import path from 'path'
 import postcss from 'postcss'
 import prettier from 'prettier'
 
 import tailwind from './index'
 
+it('should generate css, using built-in plugins', () => {
+  let input = readFile('./test-fixtures/basic/index.css')
+  let config = file('./test-fixtures/basic/tailwind.config.js')
+
+  return run(input, config).then((result) => {
+    expect(format(result.css)).toEqual(
+      format(css`
+        .built-in-utility {
+          color: red;
+        }
+      `),
+    )
+  })
+})
+
+it('should generate css, using static plugins defined in your css', () => {
+  let input = readFile('./test-fixtures/css-plugin/index.css')
+  let config = file('./test-fixtures/css-plugin/tailwind.config.js')
+
+  return run(input, config).then((result) => {
+    expect(format(result.css)).toEqual(
+      format(css`
+        .css-utility {
+          color: blue;
+        }
+      `),
+    )
+  })
+})
+
+it('should generate css, using external plugins defined in your tailwind.config.js file', () => {
+  let input = readFile('./test-fixtures/external-plugin/index.css')
+  let config = file('./test-fixtures/external-plugin/tailwind.config.js')
+
+  return run(input, config).then((result) => {
+    expect(format(result.css)).toEqual(
+      format(css`
+        .plugin-utility {
+          color: green;
+        }
+      `),
+    )
+  })
+})
+
+it('should generate css, using built-in, css and external plugins', () => {
+  let input = readFile('./test-fixtures/combined/index.css')
+  let config = file('./test-fixtures/combined/tailwind.config.js')
+
+  return run(input, config).then((result) => {
+    expect(format(result.css)).toEqual(
+      format(css`
+        .built-in-utility {
+          color: red;
+        }
+        .plugin-utility {
+          color: green;
+        }
+        .css-utility {
+          color: blue;
+        }
+      `),
+    )
+  })
+})
+
+// Ignore
 let css = String.raw
+
+function file(filePath) {
+  return path.resolve(__dirname, filePath)
+}
+
+function readFile(filePath) {
+  return fs.readFileSync(file(filePath), 'utf8')
+}
 
 function run(input, config, plugin = tailwind) {
   let { currentTestName } = expect.getState()
@@ -18,35 +94,3 @@ function run(input, config, plugin = tailwind) {
 function format(styles) {
   return prettier.format(styles, { parser: 'css' })
 }
-
-it('should work', () => {
-  let input = css`
-    @tailwind utilities;
-
-    @layer utilities {
-      .css-utility {
-        color: red;
-      }
-
-      .unused {
-        color: blue;
-      }
-    }
-  `
-
-  return run(input, path.resolve(__dirname, './tailwind.config')).then((result) => {
-    expect(format(result.css)).toEqual(
-      format(css`
-        .p-2 {
-          padding: 0.5rem;
-        }
-        .underline {
-          text-decoration-line: underline;
-        }
-        .css-utility {
-          color: red;
-        }
-      `),
-    )
-  })
-})

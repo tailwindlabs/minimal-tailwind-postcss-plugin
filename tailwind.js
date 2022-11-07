@@ -33,8 +33,8 @@ export function tailwind({ root, result: _result, configPath }) {
   // possible.
   plugins.push(function ({ addUtilities }) {
     addUtilities({
-      '.p-2': {
-        padding: '0.5rem',
+      '.built-in-utility': {
+        color: 'red',
       },
     })
   })
