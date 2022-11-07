@@ -30,9 +30,9 @@ What you will notice is that we want to trigger a rebuild when:
   - **Note**: in the real world the `content` section will contain "globs", which means that we want to register globs as a dependency as well.
 
 For demo purposes you should see the following results:
+
 - Save the `index.html` file, this should trigger a new webpack build
 - Save the `other.html` file, this should trigger a new webpack build
 - Save the `index.css` file, this should trigger a new webpack build
 - Save the `tailwind.config.js` file, this should trigger a new webpack build
-- Save the `unrelated.html` file, this should **NOT** trigger a new webpack build, because this file is not listed in the `content` section of the `tailwind.config.js` file. 
-
+- Save the `unrelated.html` file, this should **NOT** trigger a new webpack build, because this file is not listed in the `content` section of the `tailwind.config.js` file.
