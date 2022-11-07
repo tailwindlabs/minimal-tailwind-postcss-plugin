@@ -20,76 +20,84 @@ export function tailwind({ root, result, configPath }) {
     })
   }
 
-  function watchDir(dir) {
+  function watchDir(dir, glob) {
     result.messages.push({
       plugin: 'tailwindcss',
       parent: result.opts.from,
       type: 'dir-dependency',
       dir,
+      glob, // Webpack ignores this, but other tools like Vite use it when present.
     })
   }
 
-  // Ensure we have a fresh version
+  // Ensure that requiring the config file does not load a cached version of the module.
   delete require.cache[configPath]
 
-  // Ensure we watch the config file as a dependency
+  // Ensure we watch the config file as a dependency so we can rebuild when it changes.
   watchFile(configPath)
 
-  // Resolve the config
+  // Resolve the config file
   let config = require(configPath)
 
-  // Figure out all the used classes
-  let candidates = new Set()
-
   // We use fast-glob for resolving all the globs defined in your `content` section. Ideally we can
-  // register the glob as-is so that <build-tool> can watch it and ensure that when you add new
-  // files the flob still matches.
+  // register the glob itself as a dependency so that <build-tool> can watch it and ensure that when
+  // you add new files we can rebuild the CSS.
   let files = fg.sync(config.content)
 
-  // Register the dir/globs as dependencies
+  // Register the dir/globs as dependencies.
   for (let pattern of config.content) {
-    let { base } = parseGlob(pattern)
-    watchDir(base)
+    let { base, glob } = parseGlob(pattern)
+    watchDir(base, glob)
   }
 
-  // Parse each file.
-  // NOTE: Not important about what's going on here, just that we need access to the content files
-  // and we should be able to read the raw contents so that we can parse the file.
+  // Read each template file and extract the classes that are being used.
+  let candidates = new Set()
+
+  // Ideally we don't need to read all of these files on subsequent builds in watch mode, and
+  // the build tool will inform us which files have changed so we can be more efficient and
+  // just read those files. In Tailwind today we do a lot of work to track this ourselves
+  // and avoid unnecessary work because build tools don't provide it to us.
   for (let file of files) {
     let contents = fs.readFileSync(path.resolve(__dirname, file), 'utf8')
     // NOTE: Details here are not important, most important part is that we can "read" the files.
+    // In reality this is a lot more complicated but it doesn't matter for this proof-of-concept.
     for (let candidate of contents.split(/['"\s<>=/]/g)) {
       candidates.add(candidate)
     }
   }
 
-  // This will contain a list of plugin functions. The plugins can be defined in:
-  // - The core of tailwind itself
-  // - The css file
-  // - The external config file
+  // Tailwind's core is a big list of "plugins" that generate CSS.
+  // Those plugins can come from three places:
+  // - Baked in to the core of Tailwind itself
+  // - User-authored CSS defined within a `@layer` is parsed and
+  //   converted into a plugin by Tailwind at build time
+  // - User-authored plugins can be written in JS and registered
+  //   in the `tailwind.config.js` file
   let plugins = []
 
   // Built-in plugins
-  // NOTE: Quick example in reality there will be many many more, but idea is that this should be
-  // possible.
   plugins.push(function ({ addUtilities }) {
     addUtilities({
       '.built-in-utility': {
         color: 'red',
       },
-    })
-  })
-
-  // Example built-in plugin that can read values from the config
-  plugins.push(function ({ addUtilities }) {
-    addUtilities({
-      '.text-primary': {
-        color: config?.theme?.colors?.primary,
+      '.should-not-be-generated': {
+        appearance: 'none',
       },
+      // Etc.
     })
   })
 
-  // External plugins from config.
+  // Example built-in plugin that can read values from the config.
+  plugins.push(function ({ addUtilities }) {
+    addUtilities(
+      Object.fromEntries(
+        Object.entries(config?.theme?.colors ?? {}).map(([name, value]) => [`.text-${name}`, { color: value }]),
+      ),
+    )
+  })
+
+  // External plugins registered in the `tailwind.config.js` file.
   if (config.plugins) {
     plugins = plugins.concat(config.plugins)
   }
@@ -97,7 +105,8 @@ export function tailwind({ root, result, configPath }) {
   // Collect "plugins" from the CSS
   //
   // NOTE: In reality we want to collect information for the correct layer. But for this proof of
-  // concept that does not matter. Idea is that we _can_ read the css file.
+  // concept that does not matter. Idea is that we _can_ read the CSS file and collect information
+  // from it.
   root.walkAtRules('layer', (layer) => {
     layer.walkRules((node) => {
       let declarations = {}
@@ -116,7 +125,9 @@ export function tailwind({ root, result, configPath }) {
     layer.remove()
   })
 
-  // Generate all the new rules based on information from the `content` found in the config.
+  // Generate all of the CSS by looking at the classes extracted from the template files
+  // registered in the user's `content` configuration and matching them with the plugins
+  // we registered with Tailwind above.
   let newRules = []
   for (let plugin of plugins) {
     plugin({
@@ -124,7 +135,7 @@ export function tailwind({ root, result, configPath }) {
         for (let [selector, declarations] of Object.entries(definition)) {
           // Only generate the rules that we care about.
           // .slice(1) is a quick way of getting rid of the `.` of the selector
-          // Very naive, but as a proof of concept this works
+          // Very naive, but as a proof-of-concept this is fine.
           if (candidates.has(selector.slice(1))) {
             for (let node of parseObjectStyles({ [selector]: declarations })) {
               newRules.push(node)
@@ -135,7 +146,8 @@ export function tailwind({ root, result, configPath }) {
     })
   }
 
-  // Replace the @tailwind rule with the newly generated rules.
+  // Replace the @tailwind rule with the CSS that was generated based on the user's
+  // template contents.
   root.walkAtRules('tailwind', (node) => {
     node.replaceWith(newRules)
     node.remove()
