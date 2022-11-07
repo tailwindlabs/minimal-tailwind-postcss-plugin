@@ -36,5 +36,3 @@ For demo purposes you should see the following results:
 - Save the `tailwind.config.js` file, this should trigger a new webpack build
 - Save the `unrelated.html` file, this should **NOT** trigger a new webpack build, because this file is not listed in the `content` section of the `tailwind.config.js` file. 
 
-
-

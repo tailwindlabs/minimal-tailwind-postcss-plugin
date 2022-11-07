@@ -1,7 +1,7 @@
 let path = require('path')
 
 module.exports = {
-  content: [path.resolve(__dirname, './index.html'), path.resolve(__dirname, './other.html')],
+  content: [__dirname + '/{index,other}.html', __dirname + '/glob-example-folder/**/*.html'],
   theme: {
     colors: {
       primary: '#0088cc',

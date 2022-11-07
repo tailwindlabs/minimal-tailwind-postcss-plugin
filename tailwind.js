@@ -4,16 +4,28 @@ import path from 'path'
 import postcss from 'postcss'
 import postcssJs from 'postcss-js'
 
+import fg from 'fast-glob'
+import globParent from 'glob-parent'
+
 // Tailwind Core
 export function tailwind({ root, result, configPath }) {
   // Add dependency message for watching related purposes so that we can rebuild the css if any of
-  // the
+  // the `content` files (and globs) change.
   function watchFile(file) {
     result.messages.push({
       plugin: 'tailwindcss',
       parent: result.opts.from,
       type: 'dependency',
       file,
+    })
+  }
+
+  function watchDir(dir) {
+    result.messages.push({
+      plugin: 'tailwindcss',
+      parent: result.opts.from,
+      type: 'dir-dependency',
+      dir,
     })
   }
 
@@ -29,12 +41,21 @@ export function tailwind({ root, result, configPath }) {
   // Figure out all the used classes
   let candidates = new Set()
 
+  // We use fast-glob for resolving all the globs defined in your `content` section. Ideally we can
+  // register the glob as-is so that <build-tool> can watch it and ensure that when you add new
+  // files the flob still matches.
+  let files = fg.sync(config.content)
+
+  // Register the dir/globs as dependencies
+  for (let pattern of config.content) {
+    let { base } = parseGlob(pattern)
+    watchDir(base)
+  }
+
   // Parse each file.
   // NOTE: Not important about what's going on here, just that we need access to the content files
   // and we should be able to read the raw contents so that we can parse the file.
-  for (let file of config.content) {
-    watchFile(file)
-
+  for (let file of files) {
     let contents = fs.readFileSync(path.resolve(__dirname, file), 'utf8')
     // NOTE: Details here are not important, most important part is that we can "read" the files.
     for (let candidate of contents.split(/['"\s<>=/]/g)) {
@@ -132,4 +153,27 @@ function parseObjectStyles(styles) {
       parser: postcssJs,
     }).root.nodes
   })
+}
+
+// Based on `glob-base`
+// https://github.com/micromatch/glob-base/blob/master/index.js
+export function parseGlob(pattern) {
+  let glob = pattern
+  let base = globParent(pattern)
+
+  if (base !== '.') {
+    glob = pattern.substr(base.length)
+    if (glob.charAt(0) === '/') {
+      glob = glob.substr(1)
+    }
+  }
+
+  if (glob.substr(0, 2) === './') {
+    glob = glob.substr(2)
+  }
+  if (glob.charAt(0) === '/') {
+    glob = glob.substr(1)
+  }
+
+  return { base, glob }
 }
