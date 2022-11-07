@@ -39,6 +39,15 @@ export function tailwind({ root, result: _result, configPath }) {
     })
   })
 
+  // Example built-in plugin that can read values from the config
+  plugins.push(function ({ addUtilities }) {
+    addUtilities({
+      '.text-primary': {
+        color: config?.theme?.colors?.primary,
+      },
+    })
+  })
+
   // External plugins from config.
   if (config.plugins) {
     plugins = plugins.concat(config.plugins)
